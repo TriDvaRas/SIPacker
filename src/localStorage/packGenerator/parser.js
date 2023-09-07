@@ -8,7 +8,7 @@ export default async function parse(blob) {
   try {
     const zip = await JSZip.loadAsync(blob)
     const contentXML = zip.files['content.xml']
-    if(!contentXML) { return { error: 'noContentXML' }}
+    if (!contentXML) { return { error: 'noContentXML' } }
     const packContent = await contentXML.async('string')
     const content = xmlJS.xml2js(packContent)
 
@@ -18,39 +18,42 @@ export default async function parse(blob) {
     }
 
     const mapText = array => {
-      if(!array?.elements) { return [] }
+      if (!array?.elements) { return [] }
       return array.elements.map(t => t.elements[0].text)
     }
 
     const packageTag = n(content, 'package')
     const { id, name, version, difficulty, restriction, date, publisher, logo, language } = packageTag.attributes
 
-    if(await loadLocalPack(id) !== null) return { error: 'packExist' }
+    if (await loadLocalPack(id) !== null) return { error: 'packExist' }
 
     const files = new FileResolver(zip, id)
 
     const infoTag = n(packageTag, 'info')
-    const rounds = await Promise.all(n(packageTag, 'rounds').elements.map(async round => ({
+    const rounds = (await Promise.allSettled(n(packageTag, 'rounds').elements.map(async round => ({
       name: round.attributes.name,
-      themes: await Promise.all(n(round, 'themes').elements.map(async theme => ({
+      themes: (await Promise.allSettled(n(round, 'themes').elements.map(async theme => ({
         name: theme.attributes.name,
-        questions: await Promise.all(n(theme, 'questions').elements.map(async question => {
+        questions: (await Promise.allSettled(n(theme, 'questions').elements.map(async question => {
           const type = n(question, 'type')?.attributes.name ?? 'simple'
 
+          console.log('1', type)
           const typeParam = name => {
             const type = n(question, 'type')
             const param = type?.elements?.find(({ attributes }) => attributes.name === name)
             return param?.elements?.[0]?.text
           }
-
+          console.log(2)
           const questionPriceType = ['bagcat', 'cat'].includes(type) && (isNaN(typeParam('cost'))
             ? 'byPlayer' : Number(typeParam('cost')) > 0 ? 'fixed' : 'minMax')
 
+          console.log(3)
           var realpriceFrom, realpriceStep, realpriceTo, playerSelectingPrice = false
-          if(type === 'bagcat' && questionPriceType === 'byPlayer') {
+          if (type === 'bagcat' && questionPriceType === 'byPlayer') {
             playerSelectingPrice = true
-            var [,realpriceFrom,realpriceTo,realpriceStep] = typeParam('cost').match(/^[\\d+;\\d+]\/\\d*$/)
+            var [, realpriceFrom, realpriceTo, realpriceStep] = typeParam('cost').match(/^[\\d+;\\d+]\/\\d*$/)
           }
+          console.log(4)
 
           return {
             correctAnswers: mapText(n(question, 'right')),
@@ -73,7 +76,7 @@ export default async function parse(blob) {
                     data: await (async () => {
                       const atomType = type
                       const atomContent = atom.elements?.[0]?.text
-                      switch(atomType) {
+                      switch (atomType) {
                         case 'text':
                           return { text: atomContent }
 
@@ -100,9 +103,9 @@ export default async function parse(blob) {
             transferToSelf: type === 'bagcat' ? typeParam('self') : undefined,
             type
           }
-        }))
-      })))
-    })))
+        }))).map((res) => res.status=='fulfilled' ? res.value : null).filter((v) => v !== null)
+      })))).map((res) => res.status=='fulfilled' ? res.value : null).filter((v) => v !== null)
+    })))).map((res) => res.status=='fulfilled' ? res.value : null).filter((v) => v !== null)
 
     const authors = mapText(n(infoTag, 'authors'))
     const tags = mapText(n(packageTag, 'tags'))
@@ -124,7 +127,7 @@ export default async function parse(blob) {
     })
     await saveLocalPack(pack)
     return true
-  } catch(e) {
+  } catch (e) {
     console.error(e)
     return e.error ? e : { error: e }
   }

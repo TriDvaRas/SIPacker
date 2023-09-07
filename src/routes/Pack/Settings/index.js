@@ -77,6 +77,7 @@ function Settings(props) {
             .filter(removeDuplicates)
         )
       )
+      .catch(() => setTags([]))
   }, [])
 
   const formik = useFormik({

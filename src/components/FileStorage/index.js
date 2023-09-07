@@ -47,7 +47,7 @@ const FileStorage = React.forwardRef((props, ref) => {
   const loadPacks = async () => {
     const packs = await loadLocalPacks()
     const deletedPacks = await getDeletedPacks()
-    if(deletedPacks.length) packs.push(null)
+    if (deletedPacks.length) packs.push(null)
     setPacks(packs)
     setCheckboxes(
       packs.map(
@@ -71,9 +71,9 @@ const FileStorage = React.forwardRef((props, ref) => {
   const filteredPacks = Object.fromEntries(checkboxes
     .filter(cb => cb.checked)
     .map(checkedPack => ([checkedPack.uuid,
-      checkedPack.uuid === null
-        ? 'Удаленные паки'
-        : packs.find(pack => pack.uuid === checkedPack.uuid)?.name
+    checkedPack.uuid === null
+      ? 'Удаленные паки'
+      : packs.find(pack => pack.uuid === checkedPack.uuid)?.name
     ])
     )
   )
@@ -82,6 +82,7 @@ const FileStorage = React.forwardRef((props, ref) => {
 
   return (
     <Dialog
+      maxWidth='xl'
       open={open}
       onClose={handleClose}
     >
@@ -122,7 +123,7 @@ const FileStorage = React.forwardRef((props, ref) => {
             />
           </div>
         }
-        { tab === 'upload' && <Upload packUUID={packUUID} setTab={setTab} /> }
+        {tab === 'upload' && <Upload packUUID={packUUID} setTab={setTab} />}
       </DialogContent>
     </Dialog>
   )

@@ -39,11 +39,13 @@ export async function getRecent(filters, offset = 0) {
     const deletedPacks = await getDeletedPacks()
     filters.push(...deletedPacks)
   }
-  const files = await db.files.where('packUUID').anyOf(filters)
+  const files = await db.files
+    .orderBy('addedAt')
+    .filter(file => filters.includes(file.packUUID))
     .offset(offset)
     .limit(size)
     .reverse()
-    .sortBy('addedAt')
+    .toArray()
   return files
 }
 

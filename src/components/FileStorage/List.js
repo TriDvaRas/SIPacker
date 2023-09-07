@@ -31,7 +31,7 @@ const List = React.forwardRef((props, ref) => {
     const newFiles = await getRecent(Object.keys(props.packs), offset)
     const newFetchedFiles = fetchedFiles.concat(newFiles)
     setFetchedFiles(newFetchedFiles)
-
+    console.log(newFetchedFiles);
     const newMappedFiles = []
     let packSwitchUUID
     for (let file of newFetchedFiles) {
